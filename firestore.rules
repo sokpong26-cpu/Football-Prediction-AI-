@@ -1,0 +1,301 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() >= 1 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerified() {
+      return isSignedIn() && request.auth.token.email_verified == true;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isBootstrapAdmin() {
+      return isVerified() && request.auth.token.email == 'freeomg73@gmail.com';
+    }
+
+    function isAdmin() {
+      return isBootstrapAdmin() || (
+        isVerified() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      );
+    }
+
+    function isValidColumnArray(cols) {
+      return cols is list &&
+        cols.size() >= 1 &&
+        cols.size() <= 10 &&
+        cols[0] is int;
+    }
+
+    function isValidUserPublic(data, userId) {
+      return data.keys().hasAll(['uid', 'displayName', 'bettingPlatform', 'vipTier', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'displayName', 'bettingPlatform', 'vipTier', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid == userId && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.displayName is string && data.displayName.size() >= 1 && data.displayName.size() <= 80 &&
+        data.bettingPlatform in ['sokrizybet', '1xbet'] &&
+        data.vipTier in ['free', 'vip_1day', 'vip_7day', 'vip_30day', 'vip_lifetime'] &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidUserPrivate(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'phone', 'bettingAccountId', 'bio', 'createdAt', 'updatedAt']) &&
+        data.uid is string && data.uid == userId && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        (!('phone' in data) || (data.phone is string && data.phone.size() <= 30)) &&
+        (!('bettingAccountId' in data) || (data.bettingAccountId is string && data.bettingAccountId.size() <= 64)) &&
+        (!('bio' in data) || (data.bio is string && data.bio.size() <= 280)) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidPhotoScan(data) {
+      return data.keys().hasAll(['ownerId', 'platform', 'activeRow', 'recommendedColumn', 'overallConfidence', 'summaryTitle', 'answerExplanation', 'safeColumns', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'platform', 'activeRow', 'recommendedColumn', 'overallConfidence', 'summaryTitle', 'answerExplanation', 'safeColumns', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.platform is string && data.platform.size() >= 1 && data.platform.size() <= 60 &&
+        data.activeRow is int && data.activeRow >= 1 && data.activeRow <= 10 &&
+        data.recommendedColumn is int && data.recommendedColumn >= 1 && data.recommendedColumn <= 5 &&
+        data.overallConfidence is number && data.overallConfidence >= 0 && data.overallConfidence <= 100 &&
+        data.summaryTitle is string && data.summaryTitle.size() >= 1 && data.summaryTitle.size() <= 140 &&
+        data.answerExplanation is string && data.answerExplanation.size() <= 1000 &&
+        isValidColumnArray(data.safeColumns) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidSignalRecord(data) {
+      return data.keys().hasAll(['ownerId', 'platform', 'accountId', 'gameId', 'strategy', 'accuracy', 'safeColumns', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'platform', 'accountId', 'gameId', 'strategy', 'accuracy', 'safeColumns', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.platform in ['sokrizybet', '1xbet'] &&
+        data.accountId is string && data.accountId.size() >= 1 && data.accountId.size() <= 64 &&
+        data.gameId is string && data.gameId.size() >= 1 && data.gameId.size() <= 64 &&
+        data.strategy is string && data.strategy.size() >= 1 && data.strategy.size() <= 40 &&
+        data.accuracy is number && data.accuracy >= 0 && data.accuracy <= 100 &&
+        isValidColumnArray(data.safeColumns) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidCloudflareConfig(data) {
+      return data.keys().hasAll(['ownerId', 'projectName', 'workerName', 'wafLevel', 'edgeCacheTtl', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'projectName', 'workerName', 'customDomain', 'wafLevel', 'edgeCacheTtl', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.projectName is string && data.projectName.size() >= 1 && data.projectName.size() <= 80 &&
+        data.workerName is string && data.workerName.size() >= 1 && data.workerName.size() <= 80 &&
+        (!('customDomain' in data) || (data.customDomain is string && data.customDomain.size() <= 120)) &&
+        data.wafLevel in ['high', 'under_attack', 'medium'] &&
+        data.edgeCacheTtl is int && data.edgeCacheTtl >= 0 && data.edgeCacheTtl <= 86400 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    function isValidAdminRecord(data, userId) {
+      return data.keys().hasAll(['uid', 'email', 'role', 'createdAt']) &&
+        data.keys().hasOnly(['uid', 'email', 'role', 'createdAt']) &&
+        data.uid is string && data.uid == userId && data.uid.size() >= 1 && data.uid.size() <= 128 &&
+        data.email is string && data.email.size() >= 3 && data.email.size() <= 160 &&
+        data.role in ['admin', 'owner'] &&
+        data.createdAt is timestamp;
+    }
+
+    function isValidFootballPrediction(data) {
+      return data.keys().hasAll(['ownerId', 'league', 'matchTitle', 'homeTeam', 'awayTeam', 'winningTeamPick', 'handicapPick', 'overUnderPick', 'correctScorePick', 'confidence', 'workingSummary', 'createdAt', 'updatedAt']) &&
+        data.keys().hasOnly(['ownerId', 'league', 'matchTitle', 'homeTeam', 'awayTeam', 'winningTeamPick', 'handicapPick', 'overUnderPick', 'correctScorePick', 'topLockPick', 'bttsPick', 'htFtPick', 'cornersPick', 'cardsPick', 'confidence', 'workingSummary', 'createdAt', 'updatedAt']) &&
+        data.ownerId is string && data.ownerId.size() >= 1 && data.ownerId.size() <= 128 &&
+        data.league is string && data.league.size() >= 1 && data.league.size() <= 80 &&
+        data.matchTitle is string && data.matchTitle.size() >= 1 && data.matchTitle.size() <= 160 &&
+        data.homeTeam is string && data.homeTeam.size() >= 1 && data.homeTeam.size() <= 80 &&
+        data.awayTeam is string && data.awayTeam.size() >= 1 && data.awayTeam.size() <= 80 &&
+        data.winningTeamPick is string && data.winningTeamPick.size() >= 1 && data.winningTeamPick.size() <= 100 &&
+        data.handicapPick is string && data.handicapPick.size() >= 1 && data.handicapPick.size() <= 100 &&
+        data.overUnderPick is string && data.overUnderPick.size() >= 1 && data.overUnderPick.size() <= 100 &&
+        data.correctScorePick is string && data.correctScorePick.size() >= 1 && data.correctScorePick.size() <= 32 &&
+        (!('topLockPick' in data) || (data.topLockPick is string && data.topLockPick.size() <= 140)) &&
+        (!('bttsPick' in data) || (data.bttsPick is string && data.bttsPick.size() <= 60)) &&
+        (!('htFtPick' in data) || (data.htFtPick is string && data.htFtPick.size() <= 60)) &&
+        (!('cornersPick' in data) || (data.cornersPick is string && data.cornersPick.size() <= 60)) &&
+        (!('cardsPick' in data) || (data.cardsPick is string && data.cardsPick.size() <= 60)) &&
+        data.confidence is number && data.confidence >= 0 && data.confidence <= 100 &&
+        data.workingSummary is string && data.workingSummary.size() <= 1000 &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    match /test/connection {
+      allow get: if true;
+    }
+
+    match /admins/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isBootstrapAdmin();
+      allow create: if isValidId(userId) && isAdmin() &&
+        isValidAdminRecord(incoming(), userId) &&
+        incoming().createdAt == request.time;
+      allow update, delete: if isValidId(userId) && isAdmin();
+    }
+
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isBootstrapAdmin();
+      allow create: if isValidId(userId) &&
+        isVerified() &&
+        isOwner(userId) &&
+        isValidUserPublic(incoming(), userId) &&
+        incoming().vipTier == 'free' &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(userId) &&
+        isVerified() &&
+        isValidUserPublic(incoming(), userId) &&
+        incoming().uid == existing().uid &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            isOwner(userId) &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'bettingPlatform', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(userId) && isAdmin();
+
+      match /private/{docId} {
+        allow get: if isValidId(userId) && docId == 'info' && (isOwner(userId) || isAdmin());
+        allow list: if isBootstrapAdmin();
+        allow create: if isValidId(userId) &&
+          docId == 'info' &&
+          isVerified() &&
+          isOwner(userId) &&
+          isValidUserPrivate(incoming(), userId) &&
+          incoming().createdAt == request.time &&
+          incoming().updatedAt == request.time;
+        allow update: if isValidId(userId) &&
+          docId == 'info' &&
+          isVerified() &&
+          isValidUserPrivate(incoming(), userId) &&
+          incoming().uid == existing().uid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().updatedAt == request.time && (
+            isAdmin() || (
+              isOwner(userId) &&
+              incoming().diff(existing()).affectedKeys().hasOnly(['email', 'phone', 'bettingAccountId', 'bio', 'updatedAt'])
+            )
+          );
+        allow delete: if isValidId(userId) && docId == 'info' && (isOwner(userId) || isAdmin());
+      }
+    }
+
+    match /photoScans/{scanId} {
+      allow get: if isValidId(scanId) && isSignedIn() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(scanId) &&
+        isVerified() &&
+        isValidPhotoScan(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(scanId) &&
+        isVerified() &&
+        isValidPhotoScan(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['summaryTitle', 'answerExplanation', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(scanId) && isVerified() && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /signals/{signalId} {
+      allow get: if isValidId(signalId) && isSignedIn() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(signalId) &&
+        isVerified() &&
+        isValidSignalRecord(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(signalId) &&
+        isVerified() &&
+        isValidSignalRecord(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['strategy', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(signalId) && isVerified() && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /cloudflareConfigs/{configId} {
+      allow get: if isValidId(configId) && isSignedIn() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(configId) &&
+        isVerified() &&
+        isValidCloudflareConfig(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(configId) &&
+        isVerified() &&
+        isValidCloudflareConfig(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['projectName', 'workerName', 'customDomain', 'wafLevel', 'edgeCacheTtl', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(configId) && isVerified() && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+
+    match /footballPredictions/{predictionId} {
+      allow get: if isValidId(predictionId) && isSignedIn() && (existing().ownerId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid || isBootstrapAdmin());
+      allow create: if isValidId(predictionId) &&
+        isVerified() &&
+        isValidFootballPrediction(incoming()) &&
+        incoming().ownerId == request.auth.uid &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+      allow update: if isValidId(predictionId) &&
+        isVerified() &&
+        isValidFootballPrediction(incoming()) &&
+        incoming().ownerId == existing().ownerId &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time && (
+          isAdmin() || (
+            existing().ownerId == request.auth.uid &&
+            incoming().diff(existing()).affectedKeys().hasOnly(['workingSummary', 'updatedAt'])
+          )
+        );
+      allow delete: if isValidId(predictionId) && isVerified() && (existing().ownerId == request.auth.uid || isAdmin());
+    }
+  }
+}

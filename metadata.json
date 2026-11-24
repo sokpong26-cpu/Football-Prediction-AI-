@@ -1,0 +1,6 @@
+{
+  "name": "Apple of Fortune Signal & Order Management System",
+  "description": "ប្រព័ន្ធចាប់សេវា Apple of Fortune Real-Time AI, គ្រប់គ្រងការបញ្ជាទិញ Cloud SQL និង Data Center Server Status",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

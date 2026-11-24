@@ -1,0 +1,164 @@
+{
+  "entities": {
+    "UserPublicProfile": {
+      "title": "UserPublicProfile",
+      "description": "Public non-PII profile information for a registered player.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "displayName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "bettingPlatform": { "type": "string", "enum": ["sokrizybet", "1xbet"] },
+        "vipTier": { "type": "string", "enum": ["free", "vip_1day", "vip_7day", "vip_30day", "vip_lifetime"] },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "displayName", "bettingPlatform", "vipTier", "createdAt", "updatedAt"]
+    },
+    "UserPrivateInfo": {
+      "title": "UserPrivateInfo",
+      "description": "Isolated PII document for user email, phone number, and linked game account ID.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "phone": { "type": "string", "maxLength": 30 },
+        "bettingAccountId": { "type": "string", "maxLength": 64 },
+        "bio": { "type": "string", "maxLength": 280 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "createdAt", "updatedAt"]
+    },
+    "PhotoScanRecord": {
+      "title": "PhotoScanRecord",
+      "description": "Saved AI Vision Apple of Fortune photo scan signal answer without binary image blobs.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "platform": { "type": "string", "minLength": 1, "maxLength": 60 },
+        "activeRow": { "type": "number" },
+        "recommendedColumn": { "type": "number" },
+        "overallConfidence": { "type": "number" },
+        "summaryTitle": { "type": "string", "minLength": 1, "maxLength": 140 },
+        "answerExplanation": { "type": "string", "maxLength": 1000 },
+        "safeColumns": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "platform", "activeRow", "recommendedColumn", "overallConfidence", "summaryTitle", "answerExplanation", "safeColumns", "createdAt", "updatedAt"]
+    },
+    "SignalRecord": {
+      "title": "SignalRecord",
+      "description": "Synced Apple of Fortune Bot AI live signal session.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "platform": { "type": "string", "enum": ["sokrizybet", "1xbet"] },
+        "accountId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "gameId": { "type": "string", "minLength": 1, "maxLength": 64 },
+        "strategy": { "type": "string", "minLength": 1, "maxLength": 40 },
+        "accuracy": { "type": "number" },
+        "safeColumns": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "platform", "accountId", "gameId", "strategy", "accuracy", "safeColumns", "createdAt", "updatedAt"]
+    },
+    "CloudflareConfigRecord": {
+      "title": "CloudflareConfigRecord",
+      "description": "Saved Cloudflare Pages & Workers edge deployment profile.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "projectName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "workerName": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "customDomain": { "type": "string", "maxLength": 120 },
+        "wafLevel": { "type": "string", "enum": ["high", "under_attack", "medium"] },
+        "edgeCacheTtl": { "type": "number" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "projectName", "workerName", "wafLevel", "edgeCacheTtl", "createdAt", "updatedAt"]
+    },
+    "AdminRecord": {
+      "title": "AdminRecord",
+      "description": "Trusted administrator registry document.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "email": { "type": "string", "format": "email", "maxLength": 160 },
+        "role": { "type": "string", "enum": ["admin", "owner"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "FootballPredictionRecord": {
+      "title": "FootballPredictionRecord",
+      "description": "Saved AI Football Match prediction across Winner, Asian Handicap, Over/Under, Correct Score, BTTS, HT/FT, Corners, and Cards markets.",
+      "type": "object",
+      "properties": {
+        "ownerId": { "type": "string", "minLength": 1, "maxLength": 128 },
+        "league": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "matchTitle": { "type": "string", "minLength": 1, "maxLength": 160 },
+        "homeTeam": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "awayTeam": { "type": "string", "minLength": 1, "maxLength": 80 },
+        "winningTeamPick": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "handicapPick": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "overUnderPick": { "type": "string", "minLength": 1, "maxLength": 100 },
+        "correctScorePick": { "type": "string", "minLength": 1, "maxLength": 32 },
+        "topLockPick": { "type": "string", "maxLength": 140 },
+        "bttsPick": { "type": "string", "maxLength": 60 },
+        "htFtPick": { "type": "string", "maxLength": 60 },
+        "cornersPick": { "type": "string", "maxLength": 60 },
+        "cardsPick": { "type": "string", "maxLength": 60 },
+        "confidence": { "type": "number" },
+        "workingSummary": { "type": "string", "maxLength": 1000 },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["ownerId", "league", "matchTitle", "homeTeam", "awayTeam", "winningTeamPick", "handicapPick", "overUnderPick", "correctScorePick", "confidence", "workingSummary", "createdAt", "updatedAt"]
+    },
+    "ConnectivityCheck": {
+      "title": "ConnectivityCheck",
+      "description": "Read-only health probe document for client connection verification.",
+      "type": "object",
+      "properties": {
+        "ok": { "type": "boolean" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserPublicProfile" },
+      "description": "Public non-PII user profiles keyed by Firebase UID."
+    },
+    "/users/{userId}/private/{docId}": {
+      "schema": { "$ref": "#/entities/UserPrivateInfo" },
+      "description": "Private PII subcollection isolated strictly to owner and verified admin."
+    },
+    "/photoScans/{scanId}": {
+      "schema": { "$ref": "#/entities/PhotoScanRecord" },
+      "description": "User-owned AI Photo Scan analysis results."
+    },
+    "/signals/{signalId}": {
+      "schema": { "$ref": "#/entities/SignalRecord" },
+      "description": "User-owned synced Bot AI signal history."
+    },
+    "/cloudflareConfigs/{configId}": {
+      "schema": { "$ref": "#/entities/CloudflareConfigRecord" },
+      "description": "User-owned Cloudflare Edge build and Worker deployment settings."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminRecord" },
+      "description": "Admin role registry protected by bootstrapped owner verification."
+    },
+    "/footballPredictions/{predictionId}": {
+      "schema": { "$ref": "#/entities/FootballPredictionRecord" },
+      "description": "User-owned AI Football Match predictions."
+    },
+    "/test/{docId}": {
+      "schema": { "$ref": "#/entities/ConnectivityCheck" },
+      "description": "Read-only connectivity test path for testConnection()."
+    }
+  }
+}

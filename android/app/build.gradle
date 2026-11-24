@@ -1,0 +1,44 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.bitsgap.applefortune'
+    compileSdk 35
+
+    defaultConfig {
+        applicationId "com.bitsgap.applefortune"
+        minSdk 24
+        targetSdk 35
+        versionCode 56
+        versionName "5.6.0"
+
+        buildConfigField "String", "LIVE_SYNC_URL", "\"https://ais-pre-mhxxr6xr7xufwlnyflmzq3-964532939784.asia-east1.run.app\""
+        buildConfigField "String", "LOADING_MODE", "\"hybrid\""
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            applicationIdSuffix ".debug"
+            debuggable true
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+}
+
+dependencies {
+    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.webkit:webkit:1.12.1'
+}

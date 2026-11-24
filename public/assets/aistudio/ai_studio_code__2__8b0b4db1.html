@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Apple of Fortune Simulator</title>
+  <style>
+    body {
+      background: #0f111a;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+    h1 { margin-bottom: 5px; color: #00e676; }
+    #stats {
+      margin-bottom: 15px;
+      font-size: 1.1rem;
+      background: #1a1e2e;
+      padding: 10px 20px;
+      border-radius: 8px;
+    }
+    .board {
+      display: flex;
+      flex-direction: column-reverse; /* Row 1 at the bottom */
+      gap: 6px;
+      background: #161b26;
+      padding: 12px;
+      border-radius: 10px;
+    }
+    .row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .multiplier {
+      width: 70px;
+      font-weight: bold;
+      color: #ffd54f;
+      text-align: right;
+      font-size: 0.9rem;
+    }
+    .cell {
+      width: 44px;
+      height: 44px;
+      background: #252d3d;
+      border: 2px solid #3b475d;
+      border-radius: 6px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      user-select: none;
+      transition: background 0.15s;
+    }
+    .cell:hover:not(.disabled) {
+      background: #354157;
+      border-color: #00e676;
+    }
+    .cell.disabled {
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+    .cell.revealed-apple {
+      background: #1b5e20 !important;
+      border-color: #00e676;
+    }
+    .cell.revealed-core {
+      background: #b71c1c !important;
+      border-color: #ff5252;
+    }
+    .controls {
+      margin-top: 15px;
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      background: #00e676;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      font-size: 1rem;
+      font-weight: bold;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #00c853; }
+    button:disabled { background: #555; color: #888; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+
+  <h1>Apple of Fortune (Odds Demo)</h1>
+  <div id="stats">
+    Balance: $<span id="balance">100.00</span> | 
+    Current Win: $<span id="currentWin">0.00</span>
+  </div>
+
+  <div class="board" id="board"></div>
+
+  <div class="controls">
+    <button id="startBtn" onclick="startGame()">Bet $10</button>
+    <button id="cashoutBtn" onclick="cashOut()" disabled>Cash Out</button>
+  </div>
+
+  <script>
+    // Configuration matching typical Apple of Fortune payout and core counts:
+    // [multiplier, rotten_apple_count out of 5 columns]
+    const ROW_CONFIG = [
+      { mult: 1.23, cores: 1 }, // Row 1: 4 apples, 1 core (80% win rate)
+      { mult: 1.54, cores: 1 }, // Row 2: 4 apples, 1 core
+      { mult: 1.93, cores: 1 }, // Row 3: 4 apples, 1 core
+      { mult: 2.41, cores: 1 }, // Row 4: 4 apples, 1 core
+      { mult: 4.02, cores: 2 }, // Row 5: 3 apples, 2 cores (60% win rate)
+      { mult: 6.71, cores: 2 }, // Row 6: 3 apples, 2 cores
+      { mult: 11.18, cores: 2 },// Row 7: 3 apples, 2 cores
+      { mult: 27.97, cores: 3 },// Row 8: 2 apples, 3 cores (40% win rate)
+      { mult: 69.93, cores: 3 },// Row 9: 2 apples, 3 cores
+      { mult: 349.68, cores: 4 }// Row 10: 1 apple, 4 cores (20% win rate)
+    ];
+
+    let balance = 100.00;
+    let betAmount = 10.00;
+    let currentRow = 0;
+    let active = false;
+    let boardData = [];
+
+    function initBoard() {
+      const boardEl = document.getElementById('board');
+      boardEl.innerHTML = '';
+      for (let r = 0; r < ROW_CONFIG.length; r++) {
+        const rowEl = document.createElement('div');
+        rowEl.className = 'row';
+
+        const label = document.createElement('div');
+        label.className = 'multiplier';
+        label.innerText = ROW_CONFIG[r].mult + 'x';
+        rowEl.appendChild(label);
+
+        for (let c = 0; c < 5; c++) {
+          const cell = document.createElement('div');
+          cell.className = 'cell disabled';
+          cell.id = `cell-${r}-${c}`;
+          cell.onclick = () => selectCell(r, c);
+          rowEl.appendChild(cell);
+        }
+        boardEl.appendChild(rowEl);
+      }
+    }
+
+    function startGame() {
+      if (balance < betAmount) return alert("Insufficient balance!");
+      balance -= betAmount;
+      updateUI();
+
+      currentRow = 0;
+      active = true;
+      document.getElementById('startBtn').disabled = true;
+      document.getElementById('cashoutBtn').disabled = true;
+
+      // Server-side emulation: generate the full board securely in memory
+      boardData = ROW_CONFIG.map(cfg => {
+        let items = Array(5).fill('🍏');
+        let coresPlaced = 0;
+        while (coresPlaced < cfg.cores) {
+          let idx = Math.floor(Math.random() * 5);
+          if (items[idx] !== '🍎') { // 🍎 represents rotten core here
+            items[idx] = '🍎';
+            coresPlaced++;
+          }
+        }
+        return items;
+      });
+
+      initBoard();
+      highlightActiveRow();
+    }
+
+    function highlightActiveRow() {
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 5; c++) {
+          const cell = document.getElementById(`cell-${r}-${c}`);
+          if (r === currentRow && active) {
+            cell.classList.remove('disabled');
+          } else {
+            cell.classList.add('disabled');
+          }
+        }
+      }
+    }
+
+    function selectCell(r, c) {
+      if (!active || r !== currentRow) return;
+
+      const result = boardData[r][c];
+      const cell = document.getElementById(`cell-${r}-${c}`);
+
+      if (result === '🍎') {
+        // Lost
+        cell.innerText = '💀';
+        cell.classList.add('revealed-core');
+        revealFullBoard();
+        active = false;
+        document.getElementById('startBtn').disabled = false;
+        document.getElementById('cashoutBtn').disabled = true;
+        document.getElementById('currentWin').innerText = "0.00 (Lost)";
+      } else {
+        // Won step
+        cell.innerText = '🍏';
+        cell.classList.add('revealed-apple');
+        const currentWin = (betAmount * ROW_CONFIG[r].mult).toFixed(2);
+        document.getElementById('currentWin').innerText = currentWin;
+        document.getElementById('cashoutBtn').disabled = false;
+
+        if (currentRow === 9) {
+          // Beat the final row
+          cashOut();
+        } else {
+          currentRow++;
+          highlightActiveRow();
+        }
+      }
+    }
+
+    function cashOut() {
+      if (!active || currentRow === 0 && document.getElementById('cell-0-0').innerText === '') return;
+      const winMultiplier = ROW_CONFIG[currentRow - (document.getElementById(`cell-${currentRow}-0`).classList.contains('revealed-apple') ? 0 : 1)].mult;
+      const win = betAmount * winMultiplier;
+      balance += win;
+      active = false;
+      revealFullBoard();
+      document.getElementById('startBtn').disabled = false;
+      document.getElementById('cashoutBtn').disabled = true;
+      updateUI();
+    }
+
+    function revealFullBoard() {
+      for (let r = 0; r < 10; r++) {
+        for (let c = 0; c < 5; c++) {
+          const cell = document.getElementById(`cell-${r}-${c}`);
+          if (!cell.innerText) {
+            cell.innerText = boardData[r][c] === '🍎' ? '🪱' : '🍏';
+            cell.classList.add('disabled');
+          }
+        }
+      }
+    }
+
+    function updateUI() {
+      document.getElementById('balance').innerText = balance.toFixed(2);
+    }
+
+    initBoard();
+  </script>
+</body>
+</html>
