@@ -1,5 +1,7 @@
 name: Build Android APK
-
+cd android
+./gradlew clean
+./gradlew assembleDebug
 on:
   push:
     branches: [ main, master ]
@@ -47,3 +49,8 @@ jobs:
         with:
           name: AppleOfFortuneAI-APK
           path: android/app/build/outputs/apk/debug/*.apk
+          android/app/build/outputs/apk/debug/app-debug.apk
+          - name: Install web dependencies & build
+  working-directory: ./web # adjust to your folder name
+  run: npm ci
+  
